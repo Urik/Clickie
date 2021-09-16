@@ -1,0 +1,9 @@
+.volume-control-component {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+
+  .control {
+    width: 100%;
+  }
+}

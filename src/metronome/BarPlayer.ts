@@ -9,7 +9,11 @@ export class BarPlayer {
     intervalId: number | null = null;
     lastPlayedBeatTime: number = Date.now();
 
-    constructor(private bar: Bar = [], private metronomeBpm: number = 60) {}
+    constructor(
+        private bar: Bar = [],
+        private volume: number,
+        private metronomeBpm: number = 60
+    ) {}
 
     start() {
         this.stop();
@@ -39,11 +43,15 @@ export class BarPlayer {
         this.startInterval();
     }
 
+    setVolume(volume: number) {
+        this.volume = volume;
+    }
+
     private async playBeat() {
         const beep = this.bar[this.i] === MusicMeasure.Beat ?
             mainBeep :
             subdivisionBeep;
-        await beep.play()
+        await beep.play(this.volume);
         this.lastPlayedBeatTime = Date.now();
     }
 

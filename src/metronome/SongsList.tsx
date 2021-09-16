@@ -68,7 +68,7 @@ export const SongsList: React.FC<SongsListProps> = ({
           songs.map(song =>
             <li key={song.id} className={`panel-block song`}>
               <div className="song-name-parent full-width has-text-left" onClick={() => songSelected(song)}>
-                <div className={`song-name ${song === selectedSong ? 'selected-song' : ''}`}>
+                <div className={`song-name ${song.id === selectedSong?.id ? 'selected-song' : ''}`}>
                   {song.name}
                 </div>
               </div>

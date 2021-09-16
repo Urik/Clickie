@@ -11,13 +11,15 @@ import { createBar } from '../music-beats/bar';
 import { Song } from './Song';
 import { SongsList } from './SongsList';
 import { TapCalculator } from './tap-calculator/tap-calculator';
+import { VolumeControl } from './VolumeControl/VolumeControl';
 
 type State = {
   bpm: number,
   playingSound: boolean,
   subdivisions: number,
   songs: Song[],
-  selectedSong?: Song,
+  selectedSongId?: string,
+  volume: number;
 };
 
 type Props = { defaultBpm: number };
@@ -37,13 +39,14 @@ class Metronome extends Component<Props, State> {
       playingSound: false,
       subdivisions: 0,
       songs: [],
-      selectedSong: undefined
+      selectedSongId: '',
+      volume: 100
     };
 
 
 
     this.play = debounce(50, this.play).bind(this);
-    this.barPlayer = new BarPlayer(createBar(this.state.subdivisions), this.state.bpm);
+    this.barPlayer = new BarPlayer(createBar(this.state.subdivisions), this.state.volume, this.state.bpm);
     document.addEventListener('keydown', this.toggleOnSpacePress);
   }
 
@@ -75,9 +78,18 @@ class Metronome extends Component<Props, State> {
       this.barPlayer.setTempo(newBpm);
     }
 
-    if (this.state.selectedSong) {
-      this.state.selectedSong.tempo = newBpm;
-      this.saveSongList(this.state.songs);
+    if (this.state.selectedSongId) {
+      const songIndex = this.state.songs.findIndex(song => song.id === this.state.selectedSongId);
+      const song = this.state.songs[songIndex];
+      const newSongs = [...this.state.songs];
+      newSongs[songIndex] = {
+        ...song,
+        tempo: newBpm
+      };
+      this.setState({ songs: newSongs }, () => {
+        this.saveSongList(this.state.songs);
+      });
+      // this.state.selectedSong.tempo = newBpm;
     }
 
     localStorage.setItem('tempo', String(newBpm));
@@ -115,7 +127,7 @@ class Metronome extends Component<Props, State> {
   }
 
   selectSong = async (song: Song): Promise<void> => {
-    await this.setState({ selectedSong: song });
+    await this.setState({ selectedSongId: song.id });
     this.changeTempo(song.tempo);
   };
 
@@ -127,12 +139,22 @@ class Metronome extends Component<Props, State> {
     }
   };
 
+  setVolume = (volume: number) => {
+    this.setState({ volume });
+    this.barPlayer.setVolume(volume);
+  };
+
   render() {
     const playButtonClass = this.state.playingSound ? 'fa-stop' : 'fa-play';
     return (
       <div className="metronome">
-        <div className="tempo-input">
-          <TempoInput bpm={this.state.bpm} changeTempo={this.changeTempo} />
+        <div className="tempo-row">
+          <div className="tempo-input">
+            <TempoInput bpm={this.state.bpm} changeTempo={this.changeTempo} />
+          </div>
+          <div className="volume-control">
+            <VolumeControl volume={this.state.volume} onVolumeChange={(volume) => this.setVolume(volume)} />
+          </div>
         </div>
         <button
           className="button is-success full-width tap-button"
@@ -153,7 +175,7 @@ class Metronome extends Component<Props, State> {
           <SongsList
             songs={this.state.songs}
             currentTempo={this.state.bpm}
-            selectedSong={this.state.selectedSong}
+            selectedSong={this.state.songs.find(song => song.id === this.state.selectedSongId)}
             songSelected={this.selectSong.bind(this)}
             songListHasBeenModified={this.songListModified.bind(this)}
           />
